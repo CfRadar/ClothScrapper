@@ -1,0 +1,103 @@
+{
+  "types": [
+    "round neck",
+    "crew neck",
+    "polo",
+    "oversized",
+    "boxy",
+    "graphic",
+    "acid wash",
+    "henley",
+    "v-neck",
+    "crop",
+    "drop shoulder",
+    "hooded t-shirt",
+    "mandarin collar",
+    "back printed tee"
+  ],
+  "fits": [
+    "oversized fit",
+    "regular fit",
+    "slim fit",
+    "boxy fit",
+    "relaxed fit",
+    "baggy fit",
+    "loose fit"
+  ],
+  "sleeves": [
+    "half sleeve",
+    "short sleeve",
+    "full sleeve",
+    "long sleeve",
+    "drop shoulder sleeve",
+    "sleeveless"
+  ],
+  "fabrics": [
+    "100% cotton",
+    "pure cotton",
+    "combed cotton",
+    "bio-washed cotton",
+    "cotton blend",
+    "french terry",
+    "heavyweight cotton",
+    "dry-fit",
+    "polyester blend"
+  ],
+  "occasions": [
+    "casual wear",
+    "daily wear",
+    "streetwear",
+    "college wear",
+    "gym",
+    "party wear",
+    "travel",
+    "athleisure",
+    "summer wear"
+  ],
+  "genders": [
+    "men",
+    "women",
+    "unisex",
+    "boys",
+    "girls",
+    "kids"
+  ],
+  "patterns": [
+    "solid",
+    "graphic print",
+    "typography",
+    "back print",
+    "minimal print",
+    "acid wash",
+    "tie-dye",
+    "striped",
+    "anime print",
+    "vintage"
+  ],
+  "colors": [
+    "black",
+    "white",
+    "off-white",
+    "navy blue",
+    "royal blue",
+    "sky blue",
+    "charcoal grey",
+    "melange grey",
+    "beige",
+    "cream",
+    "olive green",
+    "bottle green",
+    "maroon",
+    "burgundy",
+    "red",
+    "mustard yellow",
+    "lavender",
+    "sage green",
+    "dusty pink",
+    "brown",
+    "rust",
+    "pista green",
+    "rani pink",
+    "haldi yellow"
+  ]
+}

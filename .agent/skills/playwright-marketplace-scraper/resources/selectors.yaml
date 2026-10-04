@@ -1,0 +1,119 @@
+# Selector Registry for Indian Marketplaces
+# Ordered fallback selectors per field per platform.
+# Test periodically using scripts/selector_healthcheck.py.
+
+amazon:
+  autosuggest_url: "https://completion.amazon.in/api/2017/suggestions?limit=11&prefix={query}&suggestion-type=KEYWORD&mid=A21TJRUUN4KGV&alias=aps"
+  search_url: "https://www.amazon.in/s?k={query}"
+  captcha_identifiers:
+    - "images-amazon.com/captcha"
+    - "Type the characters you see in this image"
+    - "To discuss automated access to Amazon data please contact"
+    - "Enter the characters you see below"
+  product_card:
+    - 'div[data-component-type="s-search-result"]'
+    - 'div.s-result-item[data-asin]:not([data-asin=""])'
+  title:
+    - 'h2 a span'
+    - 'h2 span'
+    - 'h2 a'
+  brand:
+    - 'h5.s-line-clamp-1 span'
+    - 'span.a-size-base-plus.a-color-base'
+    - '.s-line-clamp-1'
+  price:
+    - 'span.a-price span.a-offscreen'
+    - 'span.a-price-whole'
+  mrp:
+    - 'span.a-price.a-text-price span.a-offscreen'
+    - 'span.a-text-strike'
+  rating:
+    - 'i.a-icon-star-small span.a-icon-alt'
+    - 'span.a-icon-alt'
+  rating_count:
+    - 'span[aria-label*="ratings"] span'
+    - 'a[href*="customerReviews"] span'
+    - 'span.a-size-base.s-underline-text'
+  sponsored:
+    - 'span:has-text("Sponsored")'
+    - 'div.puis-sponsored-label-text'
+    - '[data-component-type="sp-sponsored-result"]'
+  related_searches:
+    - 'div[data-component-type="s-keyword-latent-search"] a'
+    - 'div.s-desktop-toolbar a[href*="field-keywords"]'
+
+myntra:
+  search_url: "https://www.myntra.com/{query}"
+  autosuggest_url: "https://www.myntra.com/gateway/v2/search/suggest?query={query}"
+  state_script_regex: 'window\.__myntraState\s*=\s*(\{.*?\});'
+  captcha_identifiers:
+    - "Access Denied"
+    - "security check to continue"
+    - "challenge-platform"
+  product_card:
+    - 'li.product-base'
+    - 'div.product-card'
+  title:
+    - 'h4.product-product'
+    - 'h3.product-brand + h4'
+  brand:
+    - 'h3.product-brand'
+  price:
+    - 'span.product-discountedPrice'
+    - 'div.product-price span'
+  mrp:
+    - 'span.product-strike'
+  rating:
+    - 'div.product-ratingsContainer span'
+    - 'span.product-ratingsCount'
+  rating_count:
+    - 'div.product-ratingsCount'
+  sponsored:
+    - 'span.product-adLabel'
+  related_searches:
+    - 'div.search-hints a'
+    - 'div.breadcrumbs-container a'
+
+flipkart:
+  search_url: "https://www.flipkart.com/search?q={query}"
+  autosuggest_url: "https://www.flipkart.com/api/6/search/suggestions?q={query}"
+  captcha_identifiers:
+    - "Please verify you are a human"
+    - "shield.flipkart.com"
+    - "Robot or human?"
+  close_modal:
+    - 'button._2KpZ6l._2doB4z'
+    - 'span[role="button"]:has-text("✕")'
+    - 'button:has-text("✕")'
+  product_card:
+    # Use structural selectors due to Flipkart class obfuscation
+    - 'div[data-id]'
+    - 'div._1AtVbE:has(a[href*="/p/"])'
+    - 'div:has(a[href*="pid="])'
+  title:
+    - 'a[href*="/p/"][title]'
+    - 'a.IRpwTa'
+    - 'a.WII7ll'
+    - 'div._2WkVRV + a'
+    - 'a[href*="/p/"]'
+  brand:
+    - 'div._2WkVRV'
+    - 'div.syl9yP'
+  price:
+    - 'div._30jeq3'
+    - 'div.Nx9bqj'
+  mrp:
+    - 'div._3I9_wc'
+    - 'div.yRaY8j'
+  rating:
+    - 'div._3LWZlK'
+    - 'div.XQDdHH'
+  rating_count:
+    - 'span._2_R_DZ'
+    - 'span.Wphh3N'
+  sponsored:
+    - 'div._2I9KP_'
+    - 'span:has-text("Sponsored")'
+  related_searches:
+    - 'div._10Ermr a'
+    - 'div._3GI52j a'
