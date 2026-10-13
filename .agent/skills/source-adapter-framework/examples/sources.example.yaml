@@ -1,0 +1,116 @@
+version: "1.0"
+sources:
+  - id: amazon
+    label: "Amazon.in"
+    group: "marketplaces"
+    kind: "marketplace"
+    roles: ["sell_target", "signal"]
+    default_enabled: true
+    tos_risk: "low"
+    relevance: "high"
+    hosts:
+      - "amazon.in"
+      - "www.amazon.in"
+      - "completion.amazon.in"
+    strategies:
+      - "suggestion_api"
+      - "embedded_state"
+      - "dom_selector"
+    url_templates:
+      search: "https://www.amazon.in/s?k={query}"
+      suggest: "https://completion.amazon.in/api/2017/suggestions?limit=11&prefix={query}&suggestion-type=KEYWORD&mid=A21TJRUUN4KGV&alias=aps"
+    selectors:
+      card: "div[data-component-type='s-search-result']"
+      title: "h2 a span, h2 span"
+      price: ".a-price-whole"
+      mrp: ".a-text-price .a-offscreen"
+      rating: "span[aria-label*='out of 5 stars']"
+      sponsored: ".puis-sponsored-label-text, span:has-text('Sponsored')"
+    delay_min: 2
+    delay_max: 5
+    block_images: true
+    notes: "Main Indian B2C marketplace target."
+
+  - id: indiamart
+    label: "IndiaMART"
+    group: "b2b"
+    kind: "b2b"
+    roles: ["signal"]
+    default_enabled: true
+    tos_risk: "medium"
+    relevance: "high"
+    hosts:
+      - "indiamart.com"
+      - "www.indiamart.com"
+      - "dir.indiamart.com"
+    strategies:
+      - "dom_selector"
+      - "heuristic"
+    url_templates:
+      search: "https://dir.indiamart.com/search.mp?ss={query}"
+    selectors:
+      card: "div.mscr, div.card"
+      title: "a.cardlinks, h3.title"
+      price: "span.price"
+      supplier: "div.comp-name, a.company-name"
+      moq: "span.moq, span:has-text('Minimum Order Quantity')"
+    delay_min: 3
+    delay_max: 6
+    block_images: false
+    notes: "Indian B2B wholesale marketplace for bulk apparel & manufacturer discovery."
+
+  - id: blinkit
+    label: "Blinkit"
+    group: "quickcommerce"
+    kind: "quickcommerce"
+    roles: ["signal"]
+    default_enabled: false
+    tos_risk: "low"
+    relevance: "low"
+    requires: "pincode"
+    hosts:
+      - "blinkit.com"
+      - "www.blinkit.com"
+    strategies:
+      - "network_capture"
+      - "dom_selector"
+    url_templates:
+      search: "https://blinkit.com/s/?q={query}"
+    delay_min: 2
+    delay_max: 4
+    block_images: true
+    notes: "Quick commerce essentials; limited apparel coverage. Requires DELIVERY_PINCODE."
+
+  - id: google_suggest
+    label: "Google Search Signals"
+    group: "signals"
+    kind: "search"
+    roles: ["signal"]
+    default_enabled: true
+    tos_risk: "low"
+    relevance: "high"
+    hosts:
+      - "suggestqueries.google.com"
+    strategies:
+      - "suggestion_api"
+    url_templates:
+      suggest: "https://suggestqueries.google.com/complete/search?client=firefox&hl=en&gl=in&q={query}"
+    delay_min: 1
+    delay_max: 2
+    block_images: true
+    notes: "Public autocomplete search queries endpoint."
+
+  - id: snapmint
+    label: "Snapmint"
+    group: "marketplaces"
+    kind: "marketplace"
+    roles: ["sell_target"]
+    default_enabled: false
+    tos_risk: "low"
+    relevance: "low"
+    status_override: "unavailable"
+    status_reason: "EMI payment platform without public product search"
+    hosts:
+      - "snapmint.com"
+      - "www.snapmint.com"
+    notes: "No public catalog or product search engine exists."

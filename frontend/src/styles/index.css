@@ -1,0 +1,120 @@
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #F5F6F8;
+  --surface: #FFFFFF;
+  --surface-2: #F0F2F5;
+  --border: #E1E4E9;
+  --border-strong: #CBD0D8;
+  --text: #14171C;
+  --text-muted: #5A6472;
+  --accent: #2A5BD7;
+  --accent-soft: #E8EFFD;
+  --success: #1B8F63;
+  --warning: #B7791F;
+  --danger: #C23B3B;
+  --idle: #8A94A3;
+  --shadow-modal: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] {
+  --bg: #0E1013;
+  --surface: #15181D;
+  --surface-2: #1C2027;
+  --border: #272C34;
+  --border-strong: #38404B;
+  --text: #E7EAEE;
+  --text-muted: #8B95A3;
+  --accent: #6C94F2;
+  --accent-soft: #1B2742;
+  --success: #3CC08C;
+  --warning: #E0A94A;
+  --danger: #EE6B6B;
+  --idle: #667080;
+  --shadow-modal: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+body {
+  margin: 0;
+  font-family: "Inter Variable", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  background-color: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* React Flow styling overrides */
+.react-flow__attribution {
+  display: none !important;
+}
+
+.react-flow__pane {
+  background-color: var(--bg);
+}
+
+.react-flow__controls {
+  border-radius: 6px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface) !important;
+  box-shadow: none !important;
+  overflow: hidden;
+}
+
+.react-flow__controls-button {
+  background: var(--surface) !important;
+  border-bottom: 1px solid var(--border) !important;
+  color: var(--text) !important;
+  fill: var(--text) !important;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--surface-2) !important;
+}
+
+.react-flow__controls-button svg {
+  fill: var(--text) !important;
+}
+
+.react-flow__minimap {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px !important;
+}
+
+/* Animated edge dash */
+@keyframes flowDash {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.edge-running {
+  stroke: var(--accent) !important;
+  stroke-dasharray: 6 6 !important;
+  animation: flowDash 0.8s linear infinite !important;
+}
+
+/* Accessible focus ring */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Motion accessibility: disable transitions and edge dash animations when reduced-motion preferred */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

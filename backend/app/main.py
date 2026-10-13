@@ -16,12 +16,13 @@ if sys.platform == "win32":
     except ImportError:
         pass
 
+from fastapi import FastAPI
+
 from backend.app.config import get_settings
 from backend.app.db import init_db
-from backend.app.routers import runs, system
+from backend.app.routers import runs, sources, system
 from backend.app.scrapers.browser import BrowserManager
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from backend.app.security import setup_security
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("backend.main")
@@ -32,28 +33,30 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Initializing database schema...")
     await init_db()
+    from backend.app.scrapers.health import reset_circuit_breaker
+    await reset_circuit_breaker()
     yield
     # Teardown
     logger.info("Closing browser manager...")
     await BrowserManager.get_instance().close()
 
 
+settings = get_settings()
+is_prod = settings.APP_ENV == "prod"
+
 app = FastAPI(
     title="Marketplace Keyword Agent",
     description="Multi-agent search keyword intelligence for Indian marketplaces",
     version="1.0.0",
     lifespan=lifespan,
+    openapi_url=None if is_prod else "/openapi.json",
+    docs_url=None if is_prod else "/docs",
+    redoc_url=None if is_prod else "/redoc",
 )
 
-settings = get_settings()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[settings.FRONTEND_ORIGIN, "http://localhost:5173", "http://127.0.0.1:5173"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Apply security middlewares: headers, body limit, trusted host, strict CORS, slowapi limiter
+setup_security(app)
 
 app.include_router(system.router)
+app.include_router(sources.router)
 app.include_router(runs.router)

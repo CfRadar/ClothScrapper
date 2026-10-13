@@ -66,3 +66,27 @@ This rule is **ALWAYS ON** for all agents and subagents working in this workspac
 
 9. **Update Documentation Continuously**:
    - Whenever system behavior, schemas, or environment variables change, update `README.md` and related skill playbooks immediately.
+
+---
+
+## 5. Security & Professional Design Guardrails
+
+10. **Design & Code Hardening Standards**:
+    - UI must follow `professional-ui-design-system`; no emoji icons, no gradient/glow styling.
+    - No `dangerouslySetInnerHTML`.
+    - All untrusted text is rendered as plain text and gated before use.
+    - Outbound requests only to the host allowlist.
+    - Run `scripts/security_scan.sh` before declaring a task done.
+
+---
+
+## 6. Source Adapter & Scraper Guardrails
+
+11. **Registry-Driven Source Adapters**:
+    - **New sources are adapters, never new agents.** The system strictly retains its 4 core agents (Planner, Marketplace Scraper, Social Scraper, Analyst).
+    - **Every adapter is registered in `sources.yaml`.** Hardcoding platform endpoints or scrapers outside the registry is prohibited.
+    - **Always verify selectors and endpoints live before trusting hints.** Never rely on outdated static selector lists.
+    - **Prefer embedded JSON and network capture over brittle DOM selectors.** Ascend the strategy ladder before falling back to DOM scraping.
+    - **Never bypass blocks.** Never use stealth/evasion plugins, proxy rotation, CAPTCHA solvers, or anti-bot workarounds.
+    - **Never use Google's Custom Search JSON API.** (Closed to new customers and retires on 1 January 2027).
+    - **Record a fixture and a parser test for every adapter.** Every source must be backed by a sanitised HTML/JSON fixture and deterministic unit tests.

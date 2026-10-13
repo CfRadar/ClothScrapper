@@ -25,6 +25,7 @@ if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8")
 
 import httpx
+
 from backend.app.main import app
 from backend.app.orchestrator import WorkflowOrchestrator
 from backend.app.schemas import ProductBrief

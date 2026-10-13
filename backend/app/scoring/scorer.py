@@ -139,10 +139,27 @@ def score_platform(
         ]
         return [(s, 0.5) for s in fallback_seeds]
 
+    # B2B Taxonomy tokens
+    b2b_tax_tokens = set()
+    b2b_path = os.path.join(RESOURCE_DIR, "b2b_taxonomy.json")
+    if os.path.exists(b2b_path):
+        try:
+            with open(b2b_path, encoding="utf-8") as f:
+                b2b_data = json.load(f)
+                for w in b2b_data.get("wholesale_modifiers", []):
+                    b2b_tax_tokens.update(w.lower().split())
+                for cat in b2b_data.get("production_attributes", {}).values():
+                    for phrase in cat:
+                        b2b_tax_tokens.update(phrase.lower().split())
+        except Exception:
+            pass
+
     # Feature metrics
     suggest_presence: dict[str, float] = {}
     title_freq_top10: dict[str, float] = {}
     rank_weighted_reviews: dict[str, float] = {}
+    supplier_count: dict[str, float] = {}
+    b2b_tax_match: dict[str, float] = {}
     social_mentions: dict[str, float] = {}
     attribute_match: dict[str, float] = {}
 
@@ -156,43 +173,67 @@ def score_platform(
         # 2. Title frequency in top 10
         title_freq_top10[c] = sum(1.0 for p in top_10_products if c in p.title.lower())
 
-        # 3. Rank weighted reviews: sum( (1 / position) * log(reviews + 1) )
+        # 3. Reviews & Supplier counts
         review_score = 0.0
+        suppliers_for_c = set()
         for p in products:
             if c in p.title.lower():
                 pos = max(1, p.position)
                 revs = max(0, p.rating_count or 0)
                 review_score += (1.0 / math.sqrt(pos)) * math.log1p(revs)
-        rank_weighted_reviews[c] = review_score
+                if p.brand:
+                    suppliers_for_c.add(p.brand.lower())
 
-        # 4. Social mentions
+        rank_weighted_reviews[c] = review_score
+        supplier_count[c] = float(len(suppliers_for_c))
+
+        # 4. B2B Taxonomy match
+        c_words = set(c.split())
+        b2b_tax_match[c] = float(len(c_words.intersection(b2b_tax_tokens)))
+
+        # 5. Social mentions
         social_mentions[c] = sum(
             float(sig.mentions)
             for sig in (social.signals if social else [])
             if c in sig.phrase.lower()
         )
 
-        # 5. Attribute match to brief
-        cand_words = set(c.split())
-        overlap = len(cand_words.intersection(brief_tokens))
+        # 6. Attribute match to brief
+        overlap = len(c_words.intersection(brief_tokens))
         attribute_match[c] = float(overlap)
 
-    # Normalize each component
+    # Normalize components
     norm_suggest = min_max_normalize(suggest_presence)
     norm_title = min_max_normalize(title_freq_top10)
     norm_reviews = min_max_normalize(rank_weighted_reviews)
+    norm_suppliers = min_max_normalize(supplier_count)
+    norm_b2b_tax = min_max_normalize(b2b_tax_match)
     norm_social = min_max_normalize(social_mentions)
     norm_attr = min_max_normalize(attribute_match)
 
+    # Detect kind from platform name or registry
+    is_b2b = platform in ("indiamart", "exportersindia", "alibaba")
+
     scored: list[tuple[str, float]] = []
     for c in filtered_candidates:
-        score = (
-            0.35 * norm_suggest.get(c, 0.0)
-            + 0.25 * norm_title.get(c, 0.0)
-            + 0.20 * norm_reviews.get(c, 0.0)
-            + 0.10 * norm_social.get(c, 0.0)
-            + 0.10 * norm_attr.get(c, 0.0)
-        )
+        if is_b2b:
+            # B2B formula: 0.30 suggest + 0.25 title + 0.20 suppliers + 0.15 b2b_tax + 0.10 brief_attr
+            score = (
+                0.30 * norm_suggest.get(c, 0.0)
+                + 0.25 * norm_title.get(c, 0.0)
+                + 0.20 * norm_suppliers.get(c, 0.0)
+                + 0.15 * norm_b2b_tax.get(c, 0.0)
+                + 0.10 * norm_attr.get(c, 0.0)
+            )
+        else:
+            # Marketplace & Quick commerce formula:
+            score = (
+                0.35 * norm_suggest.get(c, 0.0)
+                + 0.25 * norm_title.get(c, 0.0)
+                + 0.20 * norm_reviews.get(c, 0.0)
+                + 0.10 * norm_social.get(c, 0.0)
+                + 0.10 * norm_attr.get(c, 0.0)
+            )
         scored.append((c, round(score, 4)))
 
     scored.sort(key=lambda item: item[1], reverse=True)

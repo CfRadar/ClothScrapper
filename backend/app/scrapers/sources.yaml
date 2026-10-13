@@ -1,0 +1,514 @@
+version: "1.0"
+sources:
+  # =========================================================================
+  # Group: B2C Marketplaces
+  # =========================================================================
+  - id: amazon
+    label: "Amazon.in"
+    group: "B2C"
+    kind: "marketplace"
+    roles: ["sell_target", "signal"]
+    default_enabled: true
+    ui_visible: true
+    tos_risk: "medium"
+    relevance: "high"
+    hosts:
+      - "amazon.in"
+      - "www.amazon.in"
+      - "completion.amazon.in"
+      - "completion.amazon.com"
+    strategies:
+      - "suggestion_api"
+      - "dom_selector"
+      - "network_capture"
+    url_templates:
+      search: "https://www.amazon.in/s?k={query}"
+      suggest: "https://completion.amazon.com/api/2017/suggestions?limit=11&prefix={query}&suggestion-type=KEYWORD&mid=A21TJRUUN4KGV&alias=aps"
+    selectors:
+      card: "div[data-component-type='s-search-result']"
+      title: "h2 a span, h2 span, h2"
+      brand: "h5.s-line-clamp-1 span, .a-size-base-plus"
+      price: ".a-price-whole"
+      mrp: ".a-text-price .a-offscreen"
+      rating: "span[aria-label*='out of 5 stars']"
+      rating_count: "span[aria-label*='out of 5 stars'] + span, a span.a-size-base"
+      sponsored: ".puis-sponsored-label-text, span:has-text('Sponsored')"
+    delay_min: 2
+    delay_max: 4
+    block_images: true
+    notes: "Main Indian B2C marketplace with autocomplete and keyword search."
+
+  - id: myntra
+    label: "Myntra"
+    group: "B2C"
+    kind: "marketplace"
+    roles: ["sell_target", "signal"]
+    default_enabled: true
+    ui_visible: true
+    tos_risk: "medium"
+    relevance: "high"
+    hosts:
+      - "myntra.com"
+      - "www.myntra.com"
+    strategies:
+      - "embedded_state"
+      - "network_capture"
+      - "dom_selector"
+    url_templates:
+      search: "https://www.myntra.com/{query}"
+      suggest: "https://www.myntra.com/gateway/v2/search/suggest?query={query}"
+    selectors:
+      card: "li.product-base"
+      title: "h4.product-product, h4.product-title"
+      brand: "h3.product-brand"
+      price: "span.product-discountedPrice, div.product-price span"
+      mrp: "span.product-strike"
+      rating: "div.product-ratingsContainer span"
+    delay_min: 2
+    delay_max: 4
+    block_images: true
+    notes: "Apparel and lifestyle destination with embedded __myntraState."
+
+  - id: flipkart
+    label: "Flipkart"
+    group: "B2C"
+    kind: "marketplace"
+    roles: ["sell_target", "signal"]
+    default_enabled: true
+    ui_visible: true
+    tos_risk: "medium"
+    relevance: "high"
+    hosts:
+      - "flipkart.com"
+      - "www.flipkart.com"
+    strategies:
+      - "dom_selector"
+      - "network_capture"
+      - "suggestion_api"
+    url_templates:
+      search: "https://www.flipkart.com/search?q={query}"
+      suggest: "https://www.flipkart.com/api/6/search/suggestions?q={query}"
+    selectors:
+      card: "div._75nlfW, div[data-id], div._1xHGtK"
+      title: "a.WKTcLC, a.IRpwTa, div._2WkVRV"
+      brand: "div._2WkVRV"
+      price: "div.Nx93G0, div._30jeq3"
+      mrp: "div.yRaY8j, div._3I9_wc"
+      rating: "div.XQDdHH, div._3LWZlK"
+      sponsored: "span:has-text('Ad'), span:has-text('Sponsored')"
+      dismiss_modal: "button:has-text('✕'), span[role='button']:has-text('✕')"
+    delay_min: 2
+    delay_max: 5
+    block_images: true
+    notes: "High-volume marketplace; unauthenticated login popup dismissed on load."
+
+  - id: ajio
+    label: "Ajio"
+    group: "B2C"
+    kind: "marketplace"
+    roles: ["sell_target", "signal"]
+    default_enabled: true
+    tos_risk: "medium"
+    relevance: "high"
+    hosts:
+      - "ajio.com"
+      - "www.ajio.com"
+    strategies:
+      - "network_capture"
+      - "embedded_state"
+      - "dom_selector"
+    url_templates:
+      search: "https://www.ajio.com/search/?text={query}"
+    selectors:
+      card: "div.item, div.rilrtl-products-list__item"
+      title: "div.name, .nameCls"
+      brand: "div.brand, .brandCls"
+      price: "span.price, .priceCls"
+      mrp: "span.orginal-price"
+    delay_min: 3
+    delay_max: 6
+    block_images: true
+    notes: "Reliance fashion portal; SPA using internal JSON search APIs."
+
+  - id: snapmint
+    label: "Snapmint"
+    group: "B2C"
+    kind: "marketplace"
+    roles: ["sell_target"]
+    default_enabled: false
+    tos_risk: "low"
+    relevance: "low"
+    status_override: "unavailable"
+    status_reason: "EMI payment platform without public product search"
+    hosts:
+      - "snapmint.com"
+      - "www.snapmint.com"
+    notes: "Payment and checkout gateway without public open product catalog."
+
+  - id: meesho
+    label: "Meesho"
+    group: "B2C"
+    kind: "marketplace"
+    roles: ["sell_target", "signal"]
+    default_enabled: true
+    ui_visible: true
+    tos_risk: "medium"
+    relevance: "high"
+    hosts:
+      - "meesho.com"
+      - "www.meesho.com"
+    strategies:
+      - "embedded_json"
+      - "network_capture"
+      - "dom_selectors"
+      - "heuristics"
+    url_templates:
+      search: "https://www.meesho.com/search?q={query}"
+    selectors:
+      card: "div[class*='ProductList__GridCol'], div[class*='Card__BaseCard'], div[data-testid='product-card']"
+      title: "p[class*='Card__Title'], p[class*='ProductTitle'], h5"
+      price: "h5[class*='Heading'], span[class*='Price']"
+      mrp: "span[class*='StrikedOffPrice']"
+      rating: "span[class*='Badge__BadgeStyle']"
+    delay_min: 2
+    delay_max: 5
+    block_images: false
+    notes: "Value-oriented social commerce; uses Next.js embedded state and search API."
+
+  # =========================================================================
+  # Group: B2B Wholesale
+  # =========================================================================
+  - id: indiamart
+    label: "IndiaMART"
+    group: "B2B"
+    kind: "b2b"
+    roles: ["sell_target", "signal"]
+    default_enabled: true
+    tos_risk: "medium"
+    relevance: "medium"
+    hosts:
+      - "indiamart.com"
+      - "www.indiamart.com"
+      - "dir.indiamart.com"
+    strategies:
+      - "dom_selector"
+      - "heuristics"
+    url_templates:
+      search: "https://dir.indiamart.com/search.mp?ss={query}"
+    selectors:
+      card: "div.mscr, div.card, div.listing-card"
+      title: "a.cardlinks, h3.title, span.title"
+      supplier: "div.comp-name, a.company-name, span.pname"
+      location: "span.city, div.comp-city, span.loc"
+      price: "span.price, p.prc"
+      moq: "span.moq, span:has-text('MOQ'), span:has-text('Minimum Order Quantity')"
+      verified: "span.trustseal, span:has-text('Verified Supplier')"
+    delay_min: 3
+    delay_max: 6
+    block_images: false
+    notes: "India's largest B2B directory; rich in fabric GSM, MOQ, and supplier hubs."
+
+  - id: exportersindia
+    label: "ExportersIndia"
+    group: "B2B"
+    kind: "b2b"
+    roles: ["sell_target", "signal"]
+    default_enabled: false
+    tos_risk: "medium"
+    relevance: "medium"
+    hosts:
+      - "exportersindia.com"
+      - "www.exportersindia.com"
+    strategies:
+      - "dom_selector"
+    url_templates:
+      search: "https://www.exportersindia.com/search.php?srch_catg_ty=P&term={query}"
+    selectors:
+      card: "div.card, div.content-box"
+      title: "h2.title a, h3 a"
+      supplier: "p.company_name a"
+      location: "span.location"
+      price: "p.price_range"
+    delay_min: 3
+    delay_max: 5
+    block_images: false
+    notes: "B2B wholesale portal for garments and bulk textiles."
+
+  - id: alibaba
+    label: "Alibaba"
+    group: "B2B"
+    kind: "b2b"
+    roles: ["sell_target", "signal"]
+    default_enabled: false
+    tos_risk: "high"
+    relevance: "medium"
+    hosts:
+      - "alibaba.com"
+      - "www.alibaba.com"
+    strategies:
+      - "dom_selector"
+    url_templates:
+      search: "https://www.alibaba.com/trade/search?SearchText={query}"
+    selectors:
+      card: "div.fy23-gallery-card, div.card"
+      title: "h2.search-card-e-title, a.title"
+      supplier: "a.search-card-e-company"
+      price: "div.search-card-e-price-main"
+      moq: "div.search-card-e-promotion"
+    delay_min: 5
+    delay_max: 8
+    block_images: true
+    notes: "Global wholesale directory; slider or verification immediately terminates with blocked."
+
+  # =========================================================================
+  # Group: Quick Commerce
+  # =========================================================================
+  - id: blinkit
+    label: "Blinkit"
+    group: "Quick commerce"
+    kind: "quickcommerce"
+    roles: ["sell_target"]
+    default_enabled: false
+    tos_risk: "medium"
+    relevance: "low"
+    requires: "pincode"
+    hosts:
+      - "blinkit.com"
+      - "www.blinkit.com"
+    strategies:
+      - "network_capture"
+      - "dom_selector"
+    url_templates:
+      search: "https://blinkit.com/s/?q={query}"
+    selectors:
+      card: "div[data-test-id='product-card'], div.product-card"
+      title: "div.Product__UpdatedTitle, div.tw-text-sm"
+      price: "div.Product__UpdatedPrice, span.tw-font-bold"
+    delay_min: 2
+    delay_max: 4
+    block_images: true
+    notes: "10-minute delivery; basic daily essentials; requires DELIVERY_PINCODE."
+
+  - id: swiggy_instamart
+    label: "Swiggy Instamart"
+    group: "Quick commerce"
+    kind: "quickcommerce"
+    roles: ["sell_target"]
+    default_enabled: false
+    tos_risk: "medium"
+    relevance: "low"
+    requires: "pincode"
+    hosts:
+      - "swiggy.com"
+      - "www.swiggy.com"
+    strategies:
+      - "network_capture"
+    url_templates:
+      search: "https://www.swiggy.com/instamart/search?custom_back=true&query={query}"
+    delay_min: 2
+    delay_max: 4
+    block_images: true
+    notes: "Hyperlocal grocery and emergency apparel; requires DELIVERY_PINCODE."
+
+  - id: zepto
+    label: "Zepto"
+    group: "Quick commerce"
+    kind: "quickcommerce"
+    roles: ["sell_target"]
+    default_enabled: false
+    tos_risk: "medium"
+    relevance: "low"
+    requires: "pincode"
+    hosts:
+      - "zeptonow.com"
+      - "www.zeptonow.com"
+    strategies:
+      - "network_capture"
+      - "dom_selector"
+    url_templates:
+      search: "https://www.zeptonow.com/search?q={query}"
+    selectors:
+      card: "a[data-testid='product-card'], div[data-testid='product-card']"
+      title: "h5[data-testid='product-card-title']"
+      price: "h4[data-testid='product-card-price']"
+    delay_min: 2
+    delay_max: 4
+    block_images: true
+    notes: "Instant delivery dark stores; apparel limited to basics."
+
+  - id: toing
+    label: "Toing"
+    group: "Quick commerce"
+    kind: "quickcommerce"
+    roles: []
+    default_enabled: false
+    tos_risk: "low"
+    relevance: "none"
+    status_override: "unavailable"
+    status_reason: "Swiggy food delivery app, no apparel catalog"
+    hosts:
+      - "toing.com"
+    notes: "Food delivery application with no apparel inventory."
+
+  # =========================================================================
+  # Group: Search and Social Signals
+  # =========================================================================
+  - id: google
+    label: "Google Signals"
+    group: "Search and social"
+    kind: "search"
+    roles: ["signal"]
+    default_enabled: true
+    tos_risk: "low"
+    relevance: "high"
+    hosts:
+      - "suggestqueries.google.com"
+    strategies:
+      - "suggestion_api"
+    url_templates:
+      suggest: "https://suggestqueries.google.com/complete/search?client=firefox&hl=en&gl=in&q={query}"
+    delay_min: 1
+    delay_max: 2
+    block_images: true
+    notes: "Public search autocomplete signals; capped at 8 queries per run."
+
+  - id: pinterest
+    label: "Pinterest"
+    group: "Search and social"
+    kind: "social"
+    roles: ["signal"]
+    default_enabled: true
+    tos_risk: "medium"
+    relevance: "medium"
+    hosts:
+      - "pinterest.com"
+      - "www.pinterest.com"
+      - "trends.pinterest.com"
+    strategies:
+      - "dom_selector"
+    url_templates:
+      search: "https://www.pinterest.com/search/pins/?q={query}"
+      trends: "https://trends.pinterest.com/?country=IN"
+    selectors:
+      card: "div[data-test-id='pinWrapper'], div[data-test-id='pin']"
+      title: "h2, h3, a[aria-label]"
+    delay_min: 3
+    delay_max: 5
+    block_images: false
+    notes: "Style, aesthetic, and color trends; terminates immediately on login wall."
+
+  - id: facebook
+    label: "Meta Ad Library"
+    group: "Search and social"
+    kind: "social"
+    roles: ["signal"]
+    default_enabled: false
+    tos_risk: "high"
+    relevance: "low"
+    hosts:
+      - "facebook.com"
+      - "www.facebook.com"
+    strategies:
+      - "dom_selector"
+    url_templates:
+      search: "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IN&q={query}"
+    selectors:
+      card: "div._7jyr"
+      title: "div._7jyr div._4ik4"
+    delay_min: 4
+    delay_max: 7
+    block_images: false
+    notes: "Competitor creative ad copy; off by default; stops on login wall."
+
+  - id: reddit
+    label: "Reddit"
+    group: "Search and social"
+    kind: "social"
+    roles: ["signal"]
+    default_enabled: true
+    tos_risk: "low"
+    relevance: "medium"
+    hosts:
+      - "reddit.com"
+      - "www.reddit.com"
+    strategies:
+      - "suggestion_api"
+    url_templates:
+      search: "https://www.reddit.com/r/{subreddit}/search.json?q={query}&restrict_sr=1&sort=relevance&limit=25"
+    delay_min: 2
+    delay_max: 3
+    block_images: true
+    notes: "Indian fashion community listening via public unauthenticated JSON."
+
+  - id: x
+    label: "X (Twitter)"
+    group: "Search and social"
+    kind: "social"
+    roles: ["signal"]
+    default_enabled: false
+    tos_risk: "high"
+    relevance: "low"
+    hosts:
+      - "x.com"
+      - "twitter.com"
+    strategies:
+      - "dom_selector"
+    url_templates:
+      search: "https://x.com/search?q={query}&f=live"
+    selectors:
+      card: "article[data-testid='tweet']"
+      title: "div[data-testid='tweetText']"
+    delay_min: 3
+    delay_max: 5
+    block_images: false
+    notes: "Best-effort viral fashion hashtag discovery; off by default."
+
+  - id: instagram
+    label: "Instagram"
+    group: "Search and social"
+    kind: "social"
+    roles: ["signal"]
+    default_enabled: false
+    tos_risk: "high"
+    relevance: "low"
+    hosts:
+      - "instagram.com"
+      - "www.instagram.com"
+    strategies:
+      - "dom_selector"
+    url_templates:
+      search: "https://www.instagram.com/explore/tags/{query}/"
+    selectors:
+      card: "article a, div._aagv"
+    delay_min: 3
+    delay_max: 5
+    block_images: false
+    notes: "Best-effort visual hashtag listening; off by default."
+
+  # =========================================================================
+  # Group: Custom
+  # =========================================================================
+  - id: estay
+    label: "Estay"
+    group: "Custom"
+    kind: "marketplace"
+    roles: ["sell_target"]
+    default_enabled: false
+    tos_risk: "medium"
+    relevance: "low"
+    status_override: "disabled"
+    status_reason: "Generic custom source disabled pending template configuration"
+    hosts:
+      - "estay.com"
+    strategies:
+      - "dom_selector"
+    url_templates:
+      search: "https://www.estay.com/search?q={query}"
+    selectors:
+      card: "div.product-card"
+      title: "h3.title"
+      price: "span.price"
+    delay_min: 2
+    delay_max: 5
+    block_images: true
+    notes: "Custom generic adapter placeholder."

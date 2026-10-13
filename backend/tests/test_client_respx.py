@@ -4,11 +4,12 @@ import httpx
 import pytest
 import pytest_asyncio
 import respx
+from pydantic import BaseModel, SecretStr
+
 from backend.app import quota
 from backend.app.config import Settings
 from backend.app.db import init_db
 from backend.app.llm.client import OpenRouterClient, QuotaExceeded
-from pydantic import BaseModel, SecretStr
 
 TEST_DB_PATH = "backend/data/test_client.db"
 

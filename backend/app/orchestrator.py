@@ -48,8 +48,17 @@ class WorkflowOrchestrator:
         run_id: str,
         brief: ProductBrief,
         emit: Callable[[str, str, str, dict | None], Coroutine[Any, Any, None]],
+        emit_node: Callable[[str, str, str | None, dict | None], Coroutine[Any, Any, None]] | None = None,
     ) -> RunResult:
         logger.info(f"Starting pipeline execution for run_id='{run_id}'")
+
+        if emit_node is None:
+            from backend.app.events import event_manager
+
+            async def _default_emit_node(node_id: str, status: str, detail: str | None = None, metrics: dict | None = None):
+                await event_manager.emit_node(run_id, node_id, status, detail, metrics)  # type: ignore
+
+            emit_node = _default_emit_node
 
         # Save initial run record in SQLite
         async with get_db() as conn:
@@ -66,7 +75,7 @@ class WorkflowOrchestrator:
             # Stage 1: AI Planner (Timeout 120s)
             try:
                 plan: SearchPlan = await asyncio.wait_for(
-                    self.planner.run(brief, emit), timeout=120.0
+                    self.planner.run(brief, emit, emit_node), timeout=120.0
                 )
             except TimeoutError:
                 logger.warning("Planner stage timed out after 120s. Using fallback plan.")
@@ -77,12 +86,17 @@ class WorkflowOrchestrator:
                     None,
                 )
                 plan = self.planner._build_deterministic_fallback(brief)
+                await emit_node("planner", "warning", "Fallback plan used (timeout)")
+                persona_summary = f"{plan.target_market.age_range}, {', '.join(plan.target_market.personas[:2])}"
+                total_q = sum(len(q) for q in plan.marketplace_queries.values())
+                await emit_node("target_market", "success", persona_summary, None)
+                await emit_node("search_queries", "success", f"{total_q} queries", {"queries": total_q})
 
             # Stage 2: Concurrent Scraping (Timeout 300s)
             scrape_results = await asyncio.wait_for(
                 asyncio.gather(
-                    self.marketplace_scraper.run(plan, brief, emit),
-                    self.social_scraper.run(plan, emit),
+                    self.marketplace_scraper.run(plan, brief, emit, emit_node),
+                    self.social_scraper.run(plan, emit, emit_node, research_sources=brief.research_sources),
                     return_exceptions=True,
                 ),
                 timeout=300.0,
@@ -127,6 +141,7 @@ class WorkflowOrchestrator:
                         marketplace_scrapes=mk_scrapes,
                         social_scrape=social_scrape,
                         emit=emit,
+                        emit_node=emit_node,
                     ),
                     timeout=150.0,
                 )
@@ -142,8 +157,11 @@ class WorkflowOrchestrator:
                     brief=brief,
                     scored_candidates=scored_candidates,
                     marketplace_scrapes=mk_scrapes,
-                    note="Analyst timed out after 150s. Result compiled via deterministic scoring engine.",
+                    plan=plan,
+                    note="Analyst timed out. Result compiled via deterministic scoring engine.",
                 )
+                await emit_node("analyst", "warning", "Fallback synthesis used (timeout)")
+
             result.run_id = run_id
 
             # Save completed result in SQLite
@@ -158,6 +176,8 @@ class WorkflowOrchestrator:
                 )
                 await conn.commit()
 
+            await emit_node("output", "success", "Keywords and factors ready", {"llm_calls": result.llm_calls_used})
+
             # Emit final SSE events
             await emit("result", "system", "Keywords and factors ready.", result.model_dump())
             await emit("done", "system", "Pipeline execution completed.", None)
@@ -168,5 +188,7 @@ class WorkflowOrchestrator:
             async with get_db() as conn:
                 await conn.execute("UPDATE runs SET status = ? WHERE id = ?", ("failed", run_id))
                 await conn.commit()
+            if emit_node:
+                await emit_node("output", "error", f"Run failed: {err}", None)
             await emit("error", "system", f"Run failed: {err}", None)
             raise

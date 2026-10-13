@@ -70,7 +70,13 @@ class PlannerAgent:
         self,
         brief: ProductBrief,
         emit: Callable[[str, str, str, dict | None], Coroutine[Any, Any, None]],
+        emit_node: Callable[[str, str, str | None, dict | None], Coroutine[Any, Any, None]] | None = None,
     ) -> SearchPlan:
+        import time
+        start_t = time.time()
+        if emit_node:
+            await emit_node("planner", "running", "Analyzing brief and audience", None)
+
         await emit("stage", "planner", "AI Planner analyzing brief and target market...", None)
         settings = get_settings()
 
@@ -80,6 +86,7 @@ class PlannerAgent:
 
         user_prompt = f"Product Brief:\n{brief.model_dump_json(indent=2)}"
 
+        fallback_used = False
         try:
             plan: SearchPlan = await self.llm.chat(
                 role="planner", system=system_prompt, user=user_prompt, schema=SearchPlan
@@ -91,6 +98,7 @@ class PlannerAgent:
                 None,
             )
         except (QuotaExceeded, LLMCallError) as e:
+            fallback_used = True
             logger.warning(
                 f"Planner LLM failed or quota exceeded ({e}). Using deterministic fallback plan."
             )
@@ -99,8 +107,12 @@ class PlannerAgent:
 
         # Code-level sanitation: dedupe, lowercase, trim queries to MAX_QUERIES_PER_PLATFORM
         sanitized_queries: dict[PlatformName, list[str]] = {}
+        fallback_consumer_queries = []
+        if plan.marketplace_queries:
+            fallback_consumer_queries = next(iter(plan.marketplace_queries.values()), [])
+
         for p in brief.platforms:
-            raw_list = plan.marketplace_queries.get(p, [])
+            raw_list = plan.marketplace_queries.get(p) or fallback_consumer_queries
             clean_list = []
             for q in raw_list:
                 norm_q = q.lower().strip()
@@ -118,6 +130,24 @@ class PlannerAgent:
 
         plan.marketplace_queries = sanitized_queries
         plan.social_queries = clean_social[:5]
+
+        duration_ms = round((time.time() - start_t) * 1000, 1)
+        if emit_node:
+            if fallback_used:
+                await emit_node("planner", "warning", "Fallback plan used", {"duration_ms": duration_ms})
+            else:
+                await emit_node(
+                    "planner",
+                    "success",
+                    "Generated queries and audience",
+                    {"duration_ms": duration_ms, "model": settings.MODEL_PLANNER},
+                )
+
+            persona_summary = f"{plan.target_market.age_range}, {', '.join(plan.target_market.personas[:2])}"
+            total_q = sum(len(q) for q in plan.marketplace_queries.values())
+            await emit_node("target_market", "success", persona_summary, None)
+            await emit_node("search_queries", "success", f"{total_q} queries", {"queries": total_q})
+
         return plan
 
     _build_fallback_plan = _build_deterministic_fallback

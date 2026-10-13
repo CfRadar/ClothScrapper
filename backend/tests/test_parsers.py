@@ -1,10 +1,12 @@
 import os
 
-from backend.app.scrapers.amazon import parse_amazon_autosuggest
-from backend.app.scrapers.amazon import parse_related_searches as parse_amazon_related
-from backend.app.scrapers.amazon import parse_search_html as parse_amazon_html
-from backend.app.scrapers.flipkart import parse_search_html as parse_flipkart_html
-from backend.app.scrapers.myntra import parse_search_html as parse_myntra_html
+from backend.app.scrapers.adapters.amazon import (
+    parse_amazon_autosuggest,
+    parse_related_searches as parse_amazon_related,
+    parse_search_html as parse_amazon_html,
+)
+from backend.app.scrapers.adapters.flipkart import parse_search_html as parse_flipkart_html
+from backend.app.scrapers.adapters.myntra import parse_search_html as parse_myntra_html
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 

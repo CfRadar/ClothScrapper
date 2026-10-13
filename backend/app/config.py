@@ -35,15 +35,26 @@ class Settings(BaseSettings):
     SCRAPE_DELAY_MAX: int = Field(default=5)
 
     # Feature Flags & Sources
+    OFFLINE_FIXTURES: bool = Field(default=False)
     ENABLE_X: bool = Field(default=False)
     ENABLE_INSTAGRAM: bool = Field(default=False)
     REDDIT_SUBREDDITS: str = Field(
         default="IndianFashionAddicts,IndianStreetwear,MaleFashionAdvice,femalefashionadvice,tshirts"
     )
     FRONTEND_ORIGIN: str = Field(default="http://localhost:5173")
+    APP_ENV: str = Field(default="dev")  # dev | prod
 
     # SQLite Database Path
     DATABASE_PATH: str = Field(default="backend/data/app.db")
+
+    # Source & Multi-Source Scraper Configuration
+    DELIVERY_PINCODE: str = Field(default="")
+    SOURCES_ALLOW_HIGH_RISK: bool = Field(default=False)
+    SEARCH_PROVIDER: str = Field(default="none")  # none | brave | serper
+    SEARCH_PROVIDER_API_KEY: SecretStr = Field(default=SecretStr(""))
+    ENABLE_GOOGLE_SERP_SCRAPE: bool = Field(default=False)
+    SCRAPE_TOTAL_BUDGET_SECONDS: int = Field(default=240)
+    SOURCE_DEADLINE_SECONDS: int = Field(default=60)
 
     @property
     def parsed_model_fallbacks(self) -> list[str]:

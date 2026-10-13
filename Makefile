@@ -1,10 +1,18 @@
 .PHONY: setup backend frontend test check clean
 ifeq ($(OS),Windows_NT)
     NPM ?= npm.cmd
-    PYTHON ?= python
+    ifeq ($(wildcard backend/.venv/Scripts/python.exe),backend/.venv/Scripts/python.exe)
+        PYTHON ?= backend/.venv/Scripts/python.exe
+    else
+        PYTHON ?= python
+    endif
 else
     NPM ?= npm
-    PYTHON ?= python3
+    ifeq ($(wildcard backend/.venv/bin/python),backend/.venv/bin/python)
+        PYTHON ?= backend/.venv/bin/python
+    else
+        PYTHON ?= python3
+    endif
 endif
 
 setup:
@@ -29,6 +37,10 @@ check:
 	cd frontend && $(NPM) run typecheck
 	cd frontend && $(NPM) test -- --run
 	cd frontend && $(NPM) run build
+	$(PYTHON) scripts/security_scan.py
+
+security:
+	$(PYTHON) scripts/security_scan.py
 
 clean:
 	rm -rf backend/__pycache__ backend/*/__pycache__ backend/data/*.db frontend/dist frontend/node_modules

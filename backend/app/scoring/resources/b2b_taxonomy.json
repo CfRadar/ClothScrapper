@@ -1,0 +1,70 @@
+{
+  "wholesale_modifiers": [
+    "manufacturer",
+    "wholesale",
+    "bulk supplier",
+    "factory price",
+    "exporter",
+    "distributor",
+    "vendor",
+    "trader",
+    "mill",
+    "job work"
+  ],
+  "production_attributes": {
+    "fabric_specifications": [
+      "100% combed cotton",
+      "single jersey",
+      "biowash",
+      "silicon wash",
+      "french terry",
+      "loopknit",
+      "pique",
+      "poly cotton blend",
+      "180 gsm",
+      "200 gsm",
+      "220 gsm",
+      "240 gsm",
+      "280 gsm"
+    ],
+    "customization_terms": [
+      "private label",
+      "custom printed",
+      "oem manufacturing",
+      "odm",
+      "screen printing",
+      "dtf print",
+      "puff print",
+      "embroidery",
+      "tagless neck label",
+      "custom packaging"
+    ],
+    "order_metrics": [
+      "minimum order quantity",
+      "moq 50 pcs",
+      "moq 100 pcs",
+      "ready stock",
+      "custom sample available",
+      "lead time",
+      "ex-factory price",
+      "fob price"
+    ],
+    "regional_wholesale_hubs_india": [
+      "Tirupur",
+      "Ludhiana",
+      "Surat",
+      "Ahmedabad",
+      "Jaipur",
+      "Delhi NCR",
+      "Kolkata"
+    ]
+  },
+  "negative_b2b_consumer_terms": [
+    "free delivery",
+    "cod available",
+    "buy 1 get 1",
+    "single piece",
+    "amazon prime",
+    "return policy 7 days"
+  ]
+}

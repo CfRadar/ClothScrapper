@@ -1,18 +1,30 @@
+"""
+Agent 3: Social & Search Signals Listener.
+Gathers organic consumer demand, style trends, and search buzz from signal sources:
+Google autocomplete, Pinterest style pins, Meta Ad Library copy, Reddit fashion communities, X, and Instagram.
+Executes at most 1 LLM call per run to normalize colloquial phrases into candidate keywords.
+"""
+
+from __future__ import annotations
+
 import asyncio
 import logging
+import time
 from typing import Any, Callable, Coroutine
+from pydantic import BaseModel
 
+from backend.app.config import get_settings
 from backend.app.llm.client import LLMCallError, OpenRouterClient, QuotaExceeded
 from backend.app.schemas import SearchPlan, SocialScrape, SocialSignal
-from backend.app.scrapers.instagram_best_effort import scrape_instagram_best_effort
-from backend.app.scrapers.reddit import scrape_reddit
-from backend.app.scrapers.x_best_effort import scrape_x_best_effort
-from pydantic import BaseModel
+from backend.app.scrapers.adapters import get_adapter
+from backend.app.scrapers.base import SourceResult
+from backend.app.scrapers.health import record_health
+from backend.app.scrapers.registry import get_source_spec
 
 logger = logging.getLogger("backend.agents.social_scraper")
 
-SYSTEM_PROMPT = """You turn raw social-media phrases into shopper search keywords for T-shirts on Indian marketplaces.
-Keep only phrases that describe a product, style, fit, color, fabric, design, trend or occasion.
+SYSTEM_PROMPT = """You turn raw search autocomplete and social phrases into shopper search keywords for T-shirts on Indian marketplaces.
+Keep only phrases that describe a product, style, fit, color, fabric, design, trend, wholesale attribute, or occasion.
 Drop usernames, profanity, brand/celebrity names, and anything unrelated to apparel.
 Return JSON: {"candidate_keywords": ["..."]} with at most 30 short lowercase keywords."""
 
@@ -22,7 +34,7 @@ class SocialKeywordExtraction(BaseModel):
 
 
 class SocialScraperAgent:
-    """Agent 3: Gathers social buzz; uses at most 1 LLM call to normalize colloquial phrases."""
+    """Agent 3: Gathers social & search signals; uses at most 1 LLM call to normalize phrases."""
 
     def __init__(self, llm_client: OpenRouterClient):
         self.llm = llm_client
@@ -31,35 +43,85 @@ class SocialScraperAgent:
         self,
         plan: SearchPlan,
         emit: Callable[[str, str, str, dict | None], Coroutine[Any, Any, None]],
+        emit_node: Callable[[str, str, str | None, dict | None], Coroutine[Any, Any, None]] | None = None,
+        research_sources: list[str] | None = None,
     ) -> SocialScrape:
+        if emit_node:
+            await emit_node("social", "running", "Gathering search and social signals", None)
+
         await emit(
             "stage",
             "social",
-            "Gathering social listening signals from fashion communities...",
+            "Gathering search and social listening signals from demand sources...",
             None,
         )
 
         queries = plan.social_queries or ["oversized t-shirt", "cotton streetwear tee"]
+        primary_query = queries[0]
 
-        # Run social sources
-        reddit_task = scrape_reddit(queries)
-        x_task = scrape_x_best_effort(queries)
-        insta_task = scrape_instagram_best_effort(queries)
-
-        reddit_signals, (x_status, x_signals), (insta_status, insta_signals) = await asyncio.gather(
-            reddit_task, x_task, insta_task, return_exceptions=False
-        )
+        # Determine signal sources to run
+        active_sources = research_sources or ["google", "pinterest", "reddit"]
+        # Always check best-effort sources if enabled in settings
+        settings = get_settings()
+        if settings.ENABLE_X and "x" not in active_sources:
+            active_sources.append("x")
+        if settings.ENABLE_INSTAGRAM and "instagram" not in active_sources:
+            active_sources.append("instagram")
 
         all_signals: list[SocialSignal] = []
-        all_signals.extend(reddit_signals)
-        all_signals.extend(x_signals)
-        all_signals.extend(insta_signals)
+        statuses: dict[str, str] = {}
 
-        statuses = {
-            "reddit": "ok" if reddit_signals else "skipped",
-            "x": x_status,
-            "instagram": insta_status,
-        }
+        for src_id in active_sources:
+            spec = get_source_spec(src_id)
+            if emit_node:
+                await emit_node(src_id, "running", f"Querying {spec.label if spec else src_id}", None)
+
+            adapter = get_adapter(src_id)
+            try:
+                res: SourceResult = await adapter.search(primary_query)
+                statuses[src_id] = res.status
+
+                # Map signals
+                src_sigs = [
+                    SocialSignal(
+                        source=s.source,
+                        phrase=s.phrase,
+                        mentions=s.mentions,
+                        sample_titles=s.samples,
+                    )
+                    for s in res.signals
+                ]
+                all_signals.extend(src_sigs)
+
+                # Update health in SQLite
+                await record_health(
+                    source_id=src_id,
+                    result_status=res.status,
+                    strategy_used=res.strategy_used,
+                    failure_cause=res.cause or (res.note if res.status not in ("ok", "partial") else None),
+                    status_override=spec.status_override if spec else None,
+                )
+
+                if emit_node:
+                    metrics = {
+                        "signals": len(src_sigs),
+                        "duration_ms": res.duration_ms,
+                        "strategy": res.strategy_used or "none",
+                    }
+                    if res.status in ("ok", "partial"):
+                        await emit_node(src_id, "success", f"{len(src_sigs)} signals gathered", metrics)
+                    elif res.status == "skipped":
+                        await emit_node(src_id, "skipped", res.note or "Source disabled", metrics)
+                    elif res.status == "blocked":
+                        await emit_node(src_id, "warning", res.note or "Access blocked", metrics)
+                    else:
+                        await emit_node(src_id, "error", res.note or "Error querying source", metrics)
+
+            except Exception as e:
+                logger.warning(f"Error querying signal source {src_id}: {e}")
+                statuses[src_id] = "error"
+                if emit_node:
+                    await emit_node(src_id, "error", f"Error: {e}", None)
 
         # Deduplicate signals by phrase
         phrase_counts: dict[str, int] = {}
@@ -77,10 +139,10 @@ class SocialScraperAgent:
             await emit(
                 "progress",
                 "social",
-                "Normalizing community buzz into shopper search terms...",
+                "Normalizing search and community buzz into shopper search terms...",
                 None,
             )
-            user_prompt = f"Raw social phrases from Indian fashion communities:\n{top_phrases}"
+            user_prompt = f"Raw demand and search phrases from Indian shoppers:\n{top_phrases}"
 
             try:
                 result: SocialKeywordExtraction = await self.llm.chat(
@@ -104,10 +166,18 @@ class SocialScraperAgent:
         else:
             candidate_keywords = []
 
+        if emit_node:
+            await emit_node(
+                "social",
+                "success",
+                f"{len(candidate_keywords)} candidate buzzwords",
+                {"signals": len(all_signals), "keywords": len(candidate_keywords)},
+            )
+
         await emit(
             "progress",
             "social",
-            f"Social listening complete ({len(candidate_keywords)} keywords identified).",
+            f"Demand signals collection complete ({len(candidate_keywords)} keywords identified).",
             None,
         )
 

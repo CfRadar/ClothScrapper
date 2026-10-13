@@ -6,6 +6,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    headers: {
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'Referrer-Policy': 'no-referrer',
+    },
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8000',
@@ -22,9 +27,21 @@ export default defineConfig({
       }
     }
   },
+  preview: {
+    port: 5173,
+    headers: {
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'Referrer-Policy': 'no-referrer',
+    },
+  },
+  build: {
+    sourcemap: false,
+  },
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: './src/test/setup.ts'
+    setupFiles: './src/test/setup.ts',
+    include: ['src/**/*.test.{ts,tsx}']
   }
 })

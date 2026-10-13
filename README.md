@@ -1,249 +1,110 @@
 # Marketplace Keyword Agent
 
-A specialized multi-agent e-commerce intelligence system designed for Indian fashion marketplace sellers. A seller fills in a T-shirt product brief, and the application returns high-intent search keywords for **Amazon.in**, **Myntra**, and **Flipkart**, presented strictly as clean keyword chips per platform, accompanied by a structured "Other factors" section and an interactive AI customization chat block.
+A clean, professional multi-agent e-commerce SEO & Title Engine built for Indian fashion sellers. Features a single-page application (React 18 + Vite + TypeScript + Tailwind 3.4), a 4-agent backend pipeline (FastAPI + OpenRouter `:free`), pure Python mathematical scoring, and a **deterministic code-composed Title Engine** driven by verified marketplace seller documentation (`Amazon`, `Myntra`, `Flipkart`, `Meesho`).
 
 ---
 
-## Architecture Overview
+## 1. Visual Walkthrough & Screenshots
 
-The system strictly coordinates **exactly 4 agents** using plain `asyncio` workflows (no LangChain / LangGraph), streaming real-time status updates to the client via Server-Sent Events (SSE):
-
-```text
-                       +---------------------------+
-                       |   Seller Product Brief    |
-                       +-------------+-------------+
-                                     |
-                                     v
-                       +---------------------------+
-                       | Agent 1: AI Planner (LLM) |
-                       | - Target market inference |
-                       | - Platform search queries |
-                       | - Social listening seeds  |
-                       +-------------+-------------+
-                                     |
-                 +-------------------+-------------------+
-                 |                                       |
-                 v                                       v
-   +---------------------------+           +---------------------------+
-   |  Agent 2: Marketplace     |           |  Agent 3: Social Scraper  |
-   |           Scraper (0 LLM) |           |           (<= 1 LLM)      |
-   | - Amazon.in live & suggest|           | - Reddit public JSON API  |
-   | - Myntra HTML & suggest   |           | - X / IG (best effort)    |
-   | - Flipkart DOM & related  |           | - LLM normalization       |
-   +-------------+-------------+           +-------------+-------------+
-                 |                                       |
-                 +-------------------+-------------------+
-                                     |
-                                     v
-                       +---------------------------+
-                       | Deterministic Scoring     |
-                       | Engine (Pure Python)      |
-                       | - N-gram extraction (1-4) |
-                       | - Mathematical rank/score |
-                       | - Brand & conflict drops  |
-                       +-------------+-------------+
-                                     |
-                                     v
-                       +---------------------------+
-                       | Agent 4: AI Analyst (LLM) |
-                       | - Platform keyword rank   |
-                       | - Strategic other factors |
-                       | - Interactive Chat block  |
-                       +-------------+-------------+
-                                     |
-                                     v
-                       +---------------------------+
-                       | React 18 Clean UI         |
-                       | - Keywords chips ONLY     |
-                       | - Other factors accordion |
-                       | - Real-time progress bar  |
-                       | - AI customization chat   |
-                       +---------------------------+
-```
+| View | Mode | Screenshot |
+|---|---|---|
+| **Single-Page Application** | Light Mode | ![Light UI](docs/screenshots/single_page_ui_light.png) |
+| **Single-Page Application** | Dark Mode | ![Dark UI](docs/screenshots/single_page_ui_dark.png) |
+| **Generated Titles & Keywords** | Light Mode | ![Results Light](docs/screenshots/single_page_results_light.png) |
+| **Generated Titles & Keywords** | Dark Mode | ![Results Dark](docs/screenshots/single_page_results_dark.png) |
+| **System Check Preflight Modal** | Light Mode | ![System Check Dialog](docs/screenshots/system_check_dialog.png) |
 
 ---
 
-## Hard Constraints & Budget
+## 2. Architecture & Design Principles
 
-| Constraint | Implementation Detail |
-|---|---|
-| **Agent Count** | **Strictly 4 agents**: Planner, Marketplace Scraper, Social Scraper, Analyst (Analyst also powers chat). No 5th agent. |
-| **LLM Provider** | **OpenRouter Free Tier only** (model IDs ending with `:free`). Token bucket rate-limited to <= 16 req/min. |
-| **Call Budget** | **Target <= 4 LLM calls per run** (Planner: 1, Social: 0-1, Analyst: 1) and 1 call per chat message. |
-| **API Key Privacy** | Loaded only in `backend/app/config.py` from `backend/.env`. Never exposed in API responses, logs, SSE, or frontend code. |
-| **UI Presentation** | Platform keyword cards render **only keyword chips** and a "Copy all" button. No metrics, scores, or charts. |
-| **Polite Scrapers** | 24-hour SQLite caching, sequential requests per domain (concurrency=1), random 2-5s delays, graceful degradation to `blocked` on CAPTCHA. |
-
-### LLM Call Budget Table
-
-| Step | Normal Calls | Fallback Calls | Description |
-|---|---|---|---|
-| **Agent 1: Planner** | 1 | 0 (Deterministic) | Analyzes brief, infers target market, generates queries. |
-| **Agent 3: Social Scraper** | 1 | 0 (Top count) | Normalizes raw community phrases into search keywords. |
-| **Agent 4: Analyst (Run)** | 1 | 0-3 (Per-platform) | Synthesizes top candidates & computes marketplace factors. |
-| **Chat Interaction** | 1 | 0 | Customizes keywords or answers seller questions. |
-| **Typical Run Total** | **3 calls** | **<= 4 calls** | Bounded well within free-tier caps (~45 calls/day = 12-14 runs/day). |
+### Single-Page Layout
+- **Left Column (400px sticky)**: Product brief form. Select 1 to 4 marketplaces (`Amazon`, `Myntra`, `Flipkart`, `Meesho`), enter T-shirt type and color with one-click chips, choose gender target, expand optional details (Fit, Fabric, Neck, Sleeve, Pattern, Occasion, Pack, Size, Price band, Brand, Extra details), and trigger generation.
+- **Right Column (Flexible)**: Transitions cleanly from an empty state with clickable sample briefs $\rightarrow$ a 4-step progress list $\rightarrow$ full results:
+  - **Target Audience Summary**: Single muted line at the top.
+  - **Platform Tabs**: Radix-powered tabs switching between selected marketplaces.
+  - **Title Combinations**: Exactly 3 TitleCards (`Search-optimised`, `Balanced`, `Short`) with live length counters (`118 / 200 chars`), color-coded thresholds, composed title text, copy button, and expandable part breakdown.
+  - **Keywords**: Pure chips only (best-first, count badge, click-to-copy, and copy-all button).
+  - **Other Details**: Collapsible accordion covering key attributes to fill, price band, negative keywords (never target), trend hashtags, competition notes, and seasonality.
+  - **Refinement Chat**: Single-line inline chat at the bottom allowing real-time AI adjustments.
 
 ---
 
-## Prerequisites
+## 3. Deterministic Title Engine
 
-- **Python**: 3.11+ (Python 3.12, 3.13, 3.14 supported)
-- **Node.js**: 20+ (Node v20.x, v22.x, v24.x)
-- **Chromium for Playwright**: `playwright install chromium`
-- **OpenRouter Account**: Free API key from [openrouter.ai/keys](https://openrouter.ai/keys)
+Titles are **never output as raw LLM strings**. Instead, the backend Title Engine validates and composes each title using strict platform rules defined in `backend/app/titles/rules.yaml`:
+
+| Platform | Formula Order | Recommended Length | Hard Limit | Cited Seller Guide |
+|---|---|---|---|---|
+| **Amazon** | `Brand` + `Gender` + `Fit` + `Color` + `Fabric` + `Pattern` + `Neck` + `Sleeve` + `Occasion` + `T-shirt Type` | 80 - 150 chars | 200 chars | Amazon.in Style Guide for Clothing |
+| **Myntra** | `Brand` + `Gender` + `Color` + `Fit` + `Pattern` + `Occasion` + `T-shirt Type` | 40 - 55 chars | 60 chars | Myntra Partner Portal Product Naming |
+| **Flipkart** | `Brand` + `Pattern` + `Gender` + `Fit` + `Color` + `Neck` + `T-shirt Type` | 50 - 80 chars | 120 chars | Flipkart Seller Hub Title Guidelines |
+| **Meesho** | `Brand` + `Key Feature` + `Gender` + `Color` + `Fit` + `Pattern` + `Neck` + `Sleeve` + `Occasion` + `T-shirt Type` | 40 - 70 chars | 100 chars | Meesho Supplier Panel Product Listing |
+
+### Title Validation Pipeline (`validator.py` & `composer.py`)
+1. **Vocabulary Whitelist**: Only words from the user's brief, high-confidence scored keywords, or approved clothing taxonomy are permitted.
+2. **Unsupported Claim Dropping**: Claims not present in the brief (e.g. `cotton`, `100%`, `240 GSM`) are dropped with warnings rather than invented.
+3. **Brand Integrity**: Unprovided brand names are omitted cleanly without placeholder tokens.
+4. **Length Enforcement & Pruning**: If a title exceeds platform limits, non-essential attributes are pruned in deterministic priority order (`key_feature` $\rightarrow$ `occasion` $\rightarrow$ `pack` $\rightarrow$ `sleeve` $\rightarrow$ `neck` $\rightarrow$ `fabric` $\rightarrow$ `pattern` $\rightarrow$ `fit` $\rightarrow$ `gender`), preserving `tshirt_type` and `color`.
 
 ---
 
-## Quickstart (Under 5 Minutes)
+## 4. The 4-Agent Pipeline
 
-### 1. Clone & Setup Backend
+The system coordinates **strictly 4 agents** via `asyncio` workflows and Server-Sent Events (SSE):
+
+1. **Agent 1: Planner (LLM)**: Analyzes the product brief, infers buyer personas, and generates targeted search queries.
+2. **Agent 2: Marketplace Scraper (0 LLM)**: Concurrently searches Amazon.in, Myntra, Flipkart, and Meesho via resilient browser automation, embedded JSON extraction, and autosuggest APIs.
+3. **Agent 3: Social Scraper (<= 1 LLM)**: Searches organic shopper demand signals across Reddit, Google Autocomplete, and Pinterest.
+4. **Deterministic Multi-Factor Scoring (0 LLM)**: Mathematical scoring engine evaluates candidate n-grams across 5 weighted factors.
+5. **Agent 4: AI Analyst (LLM / Fallback)**: Proposes title parts and ranks top keywords. Composed via deterministic Title Engine.
+
+---
+
+## 5. Security & Verification Posture
+
+- **OpenRouter Free Tier Only**: Only `:free` models used. Daily token-bucket rate limiting ($16 \text{ RPM}$, $50 \text{ calls/day}$).
+- **SSRF Defense**: Outbound requests strictly validated against allowlisted domains (`amazon.in`, `myntra.com`, `flipkart.com`, `meesho.com`, `reddit.com`, `openrouter.ai`).
+- **CSV Injection Defense**: Cells starting with `=`, `+`, `-`, `@`, `\t`, `\r` are sanitized with quote prefixes.
+- **Constant-Time Tokens**: SSE streams, run queries, and chat endpoints require HMAC constant-time verified `X-Run-Token` headers.
+- **Automated Security Scan**: Pre-release scan verifies zero High/Critical vulnerabilities via `bandit`, `pip-audit`, `ruff -S`, `npm audit`, secret scanning, and permission checks.
+
+---
+
+## 6. Getting Started
+
+### Prerequisites
+- Python 3.11+
+- Node.js 18+
+- OpenRouter API Key (stored exclusively in `backend/.env`)
+
+### Installation & Run
 
 ```bash
-# Clone the repository
-cd marketplace-keyword-agent
-
-# Install backend dependencies & setup environment
+# 1. Setup backend and frontend dependencies
 make setup
+
+# 2. Run test suites
+make test
+
+# 3. Start development servers
+make backend    # Runs on http://127.0.0.1:8000
+make frontend   # Runs on http://localhost:5173
 ```
-
-Or manually:
-```bash
-# Backend setup
-cd backend
-python -m venv .venv
-# Windows:
-.venv\Scripts\activate
-# Linux/macOS:
-source .venv/bin/activate
-
-pip install -r requirements.txt
-playwright install chromium
-```
-
-### 2. Configure Environment & Discover Free Models
-
-Copy the environment template:
-```bash
-cp backend/.env.example backend/.env
-```
-
-Discover currently active free OpenRouter models:
-```bash
-python backend/scripts/discover_free_models.py
-```
-Open `backend/.env` and paste your `OPENROUTER_API_KEY`, setting the discovered free models:
-```env
-OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxxxxxx
-MODEL_PLANNER=thinkingmachines/inkling-small:free
-MODEL_ANALYST=thinkingmachines/inkling:free
-MODEL_SOCIAL=nvidia/nemotron-3.5-lightning:free
-MODEL_FALLBACKS=nvidia/nemotron-3-ultra-550b-a55b:free,dots-studio/dots-3-note-preview:free
-```
-
-### 3. Setup Frontend
-
-```bash
-cd frontend
-npm install
-```
-
-### 4. Run the Application
-
-In terminal 1 (Backend):
-```bash
-# From workspace root
-make backend
-# or: cd backend && python -m uvicorn app.main:app --reload --port 8000
-```
-
-In terminal 2 (Frontend):
-```bash
-# From workspace root
-make frontend
-# or: cd frontend && npm run dev
-```
-
-Open your browser at **`http://localhost:5173`**.
 
 ---
 
-## Verification & Testing
+## 7. Verification Commands
 
-Run all automated checks across backend and frontend with a single command:
 ```bash
-make check
-```
+# Run backend pytest suite (64 unit and integration tests)
+backend/.venv/Scripts/pytest backend/tests/ -v
 
-Or run individual verification steps:
-```bash
-# Backend code quality and style
-python -m ruff check backend/
-
-# Backend automated test suite (29 tests)
-python -m pytest backend/tests/ -v
-
-# Frontend TypeScript compiler check
-cd frontend && npx tsc --noEmit
-
-# Frontend unit and component tests
+# Run frontend typecheck and tests
+cd frontend && npm run typecheck
 cd frontend && npm test -- --run
-
-# Frontend production build
 cd frontend && npm run build
+
+# Run security scan
+backend/.venv/Scripts/python scripts/security_scan.py
 ```
-
-### Selector Healthcheck
-
-Verify marketplace CSS selectors against live DOM changes without running full scrapes:
-```bash
-python backend/scripts/selector_healthcheck.py
-```
-
----
-
-## Inspecting Database & Cache
-
-To inspect cached marketplace scrapes, daily LLM quotas, and past runs:
-```bash
-python backend/scripts/inspect_db.py
-```
-
----
-
-## Selector Maintenance Guide
-
-Marketplaces regularly update their markup and obfuscate class names. Selectors are isolated in [`backend/app/scrapers/selectors.yaml`](backend/app/scrapers/selectors.yaml) with an ordered fallback strategy:
-
-1. **Amazon.in**: Uses `div[data-component-type="s-search-result"]`. If titles or prices shift, update the corresponding fallback list in `selectors.yaml`.
-2. **Myntra**: Parses embedded `window.__myntraState` script JSON first. If the state payload changes, falls back to DOM selectors `li.product-base`, `h3.product-brand`, and `h4.product-product`.
-3. **Flipkart**: Uses structural anchor patterns `a[href*="/p/"][href*="pid="]` and card regex parsers for prices (`₹[\d,]+`) to stay resilient to daily class hashing.
-
-To update selectors:
-1. Open the marketplace search URL in browser DevTools.
-2. Identify stable attributes (e.g. `data-*`, semantic tags, or URL regexes).
-3. Append or reorder the selector in `backend/app/scrapers/selectors.yaml`.
-4. Run `python backend/scripts/selector_healthcheck.py` to verify match counts.
-
----
-
-## Troubleshooting
-
-### 1. HTTP 429 Rate Limits
-- The backend features an integrated token bucket rate limiter (`LLM_RPM_LIMIT=16`) and exponential backoff (2s, 4s, 8s with jitter) before switching to the next `:free` fallback model.
-- If you hit OpenRouter's global daily cap, the UI surfaces a clear quota indicator and gracefully falls back to deterministic pure-Python keyword ranking.
-
-### 2. Marketplace Blocked / CAPTCHA
-- If Amazon, Myntra, or Flipkart presents a CAPTCHA or robot wall, the platform scraper marks its status as `blocked` and stops further requests to that domain.
-- **The run never fails**: The pipeline continues with remaining platforms, and the scoring engine synthesizes cross-platform and taxonomy candidates for the blocked marketplace with an amber UI warning.
-
-### 3. Empty Social Results
-- Reddit queries use public search JSON (`https://www.reddit.com/search.json`). If Reddit is temporarily unreachable or ratelimited, the Social Scraper returns empty signals without failing the pipeline.
-- X and Instagram adapters are disabled by default (`ENABLE_X=false`, `ENABLE_INSTAGRAM=false`) and run in strictly best-effort unauthenticated mode.
-
----
-
-## Legal & Compliance Disclaimer
-
-> [!WARNING]
-> Web scraping e-commerce marketplaces may be subject to platform Terms of Service, rate limits, and intellectual property guidelines. This software is provided for educational and research purposes. Users are solely responsible for ensuring compliance with applicable platform terms, data privacy regulations, and local laws.

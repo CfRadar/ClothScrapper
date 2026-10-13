@@ -1,6 +1,7 @@
 import pytest
-from backend.app.llm.json_utils import JSONExtractError, extract_json, parse_model
 from pydantic import BaseModel
+
+from backend.app.llm.json_utils import JSONExtractError, extract_json, parse_model
 
 
 class SampleModel(BaseModel):

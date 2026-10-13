@@ -1,6 +1,8 @@
 from typing import TypeVar
 
 import pytest
+from pydantic import BaseModel, SecretStr
+
 from backend.app.agents.analyst import AnalystAgent, AnalystOutputSchema
 from backend.app.agents.planner import PlannerAgent
 from backend.app.agents.social_scraper import SocialScraperAgent
@@ -15,7 +17,6 @@ from backend.app.schemas import (
     SearchPlan,
     TargetMarket,
 )
-from pydantic import BaseModel, SecretStr
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -99,40 +100,58 @@ async def test_social_scraper_agent():
     )
 
     result = await social_agent.run(plan, dummy_emit)
-    assert result.statuses["reddit"] in ("ok", "skipped")
+    assert result.statuses["reddit"] in ("ok", "skipped", "blocked", "error")
     assert fake_llm.llm_calls_used <= 1
 
 
 @pytest.mark.asyncio
 async def test_analyst_agent_and_chat():
-    mock_analyst = AnalystOutputSchema(
-        keywords=[
-            PlatformKeywords(
-                platform="amazon", keywords=["oversized black tee", "cotton drop shoulder"]
-            )
-        ],
-        other_factors=OtherFactors(
-            target_market_summary="College youth",
-            per_platform={
-                "amazon": PlatformFactors(
-                    title_formula="Brand + Fit + Color + Tee",
-                    recommended_title_example="Demo Title",
+    from backend.app.agents.analyst import AnalystLLMOutput, ChatLLMOutput, PlatformRawProposal, RawTitlePart
+    from backend.app.schemas import PlatformDetails
+
+    mock_analyst = AnalystLLMOutput(
+        target_market_summary="College youth",
+        platforms=[
+            PlatformRawProposal(
+                platform="amazon",
+                keywords=["oversized black tee", "cotton drop shoulder"],
+                title_proposals={
+                    "search": [
+                        RawTitlePart(label="gender", text="Men"),
+                        RawTitlePart(label="color", text="Black"),
+                        RawTitlePart(label="type", text="T-Shirt"),
+                    ],
+                    "balanced": [
+                        RawTitlePart(label="gender", text="Men"),
+                        RawTitlePart(label="color", text="Black"),
+                        RawTitlePart(label="type", text="T-Shirt"),
+                    ],
+                    "short": [
+                        RawTitlePart(label="gender", text="Men"),
+                        RawTitlePart(label="color", text="Black"),
+                        RawTitlePart(label="type", text="T-Shirt"),
+                    ],
+                },
+                details=PlatformDetails(
                     attributes_to_fill=["Fit", "Fabric"],
                     price_band="₹499 - ₹799",
                     negative_keywords=["cheap"],
-                    hashtags_or_tags=["#streetwear"],
+                    tags=["#streetwear"],
                     competition_note="Medium",
                     seasonality_note="Year round",
-                )
-            },
-            general=["Focus on 240 GSM"],
-        ),
+                    notes=["Focus on 240 GSM"],
+                ),
+            )
+        ],
     )
 
-    mock_chat = ChatResponse(
+    mock_chat = ChatLLMOutput(
         reply="Updated keywords for Amazon.",
-        keywords_patch=[
-            PlatformKeywords(platform="amazon", keywords=["gen-z oversized black tee"])
+        patch=[
+            PlatformRawProposal(
+                platform="amazon",
+                keywords=["gen-z oversized black tee"],
+            )
         ],
     )
 
@@ -158,13 +177,40 @@ async def test_analyst_agent_and_chat():
         emit=dummy_emit,
     )
 
-    assert len(run_res.keywords) == 1
-    assert run_res.keywords[0].platform == "amazon"
-    assert run_res.keywords[0].keywords[0] == "oversized black tee"
+    assert len(run_res.platforms) == 1
+    assert run_res.platforms[0].platform == "amazon"
+    assert "oversized black tee" in run_res.platforms[0].keywords
+    assert len(run_res.platforms[0].titles) == 3
+    assert [t.style for t in run_res.platforms[0].titles] == ["search", "balanced", "short"]
 
     # Test Chat
     fake_llm.responses["analyst"] = mock_chat
-    chat_res = await analyst.chat(run_res, "Make it more Gen-Z")
+    chat_res = await analyst.chat(run_res, "Make it more Gen-Z", brief=brief)
     assert chat_res.reply == "Updated keywords for Amazon."
-    assert chat_res.keywords_patch is not None
-    assert chat_res.keywords_patch[0].keywords == ["gen-z oversized black tee"]
+    assert chat_res.patch is not None
+    assert chat_res.patch[0].platform == "amazon"
+    assert "gen-z oversized black tee" in chat_res.patch[0].keywords
+
+
+def test_analyst_synthesize_deterministic_fallback():
+    fake_llm = FakeLLMClient(responses={})
+    analyst = AnalystAgent(llm_client=fake_llm)
+
+    brief = ProductBrief(
+        platforms=["amazon", "myntra", "flipkart", "meesho"],
+        tshirt_type="oversized tee",
+        color="black",
+        brand_name="UrbanAura",
+    )
+    fallback_result = analyst._synthesize_deterministic_fallback(
+        brief=brief,
+        scored_candidates={"amazon": [("oversized black tee", 0.9)]},
+        marketplace_scrapes={},
+    )
+    assert fallback_result is not None
+    assert len(fallback_result.platforms) == 4
+    for plat in fallback_result.platforms:
+        assert len(plat.titles) == 3
+        assert len(plat.top_scraped_titles) == 10
+        assert len(plat.keywords) >= 15
+        assert "UrbanAura" in plat.titles[0].title

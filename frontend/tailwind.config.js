@@ -4,32 +4,38 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'media',
+  darkMode: ["selector", '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
-        brand: {
-          50: '#f0f9ff',
-          500: '#0ea5e9',
-          600: '#0284c7',
-        },
-        amazon: {
-          bg: '#451a03',
-          border: '#d97706',
-          text: '#fbbf24',
-        },
-        myntra: {
-          bg: '#500724',
-          border: '#e11d48',
-          text: '#fb7185',
-        },
-        flipkart: {
-          bg: '#172554',
-          border: '#2563eb',
-          text: '#60a5fa',
-        }
+        bg: "var(--bg)",
+        surface: "var(--surface)",
+        "surface-2": "var(--surface-2)",
+        border: "var(--border)",
+        "border-strong": "var(--border-strong)",
+        text: "var(--text)",
+        "text-muted": "var(--text-muted)",
+        accent: "var(--accent)",
+        "accent-soft": "var(--accent-soft)",
+        success: "var(--success)",
+        warning: "var(--warning)",
+        danger: "var(--danger)",
+        idle: "var(--idle)",
+      },
+      fontFamily: {
+        sans: ['"Inter Variable"', "Inter", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+        mono: ['"JetBrains Mono Variable"', "JetBrains Mono", "monospace"],
+      },
+      borderRadius: {
+        DEFAULT: "6px",
+        card: "8px",
+        input: "6px",
+        chip: "9999px",
+      },
+      boxShadow: {
+        modal: "var(--shadow-modal)",
       },
     },
   },
   plugins: [],
-}
+};

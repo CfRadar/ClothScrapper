@@ -5,11 +5,12 @@ import random
 from typing import Literal, TypeVar, Union
 
 import httpx
+from pydantic import BaseModel
+
 from backend.app import quota
 from backend.app.config import Settings, get_settings
 from backend.app.llm.json_utils import JSONExtractError, parse_model
 from backend.app.llm.limiter import TokenBucketLimiter
-from pydantic import BaseModel
 
 logger = logging.getLogger("backend.llm")
 
@@ -130,7 +131,15 @@ class OpenRouterClient:
 
         response.raise_for_status()
         data = response.json()
-        choice = data["choices"][0]
+        if not isinstance(data, dict):
+            raise LLMCallError(f"Unexpected response format from OpenRouter: {type(data)}")
+        if "error" in data:
+            err_msg = data.get("error", {}).get("message", str(data["error"]))
+            raise LLMCallError(f"OpenRouter API error: {err_msg}")
+        choices = data.get("choices")
+        if not choices:
+            raise LLMCallError(f"OpenRouter returned no choices: {data}")
+        choice = choices[0]
         msg = choice.get("message", {})
         content = msg.get("content")
         if not content:
@@ -203,10 +212,10 @@ class OpenRouterClient:
                             logger.warning(
                                 f"Model {model} output failed schema parsing: {parse_err}. Attempting 1-shot repair."
                             )
-                            # 1 repair retry on same model
+                            # 1 repair retry on same model with bounded snippet to prevent prompt bloat
                             repair_prompt = (
                                 f"The following response is invalid JSON or does not match the schema.\n"
-                                f"Response:\n{raw_content}\n\n"
+                                f"Response snippet:\n{raw_content[:2500]}\n\n"
                                 f"Return only the corrected valid JSON object and nothing else."
                             )
                             total_attempts += 1
@@ -226,8 +235,11 @@ class OpenRouterClient:
                         httpx.HTTPStatusError,
                         httpx.TimeoutException,
                         httpx.RequestError,
+                        LLMCallError,
                     ) as net_err:
                         last_error = net_err
+                        if "authentication failed" in str(net_err).lower():
+                            raise
                         if isinstance(net_err, httpx.HTTPStatusError):
                             if net_err.response.status_code in (401, 403):
                                 logger.error(

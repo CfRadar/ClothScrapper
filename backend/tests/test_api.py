@@ -3,6 +3,7 @@ import os
 import httpx
 import pytest
 import pytest_asyncio
+
 from backend.app.agents.analyst import AnalystAgent, AnalystOutputSchema
 from backend.app.agents.marketplace_scraper import MarketplaceScraperAgent
 from backend.app.agents.planner import PlannerAgent
@@ -130,9 +131,35 @@ async def test_pipeline_run_and_chat_mocked():
         # Create run
         res = await client.post("/api/runs", json=brief_payload)
         assert res.status_code == 201
-        run_id = res.json()["run_id"]
+        data = res.json()
+        run_id = data["run_id"]
+        run_token = data["run_token"]
         assert run_id
+        assert run_token
 
-        # Query run
-        run_data = await client.get(f"/api/runs/{run_id}")
+        # Query run without token -> 403
+        no_token_resp = await client.get(f"/api/runs/{run_id}")
+        assert no_token_resp.status_code == 403
+
+        # Query run with wrong token -> 403
+        bad_token_resp = await client.get(
+            f"/api/runs/{run_id}", headers={"X-Run-Token": "invalid_token_here"}
+        )
+        assert bad_token_resp.status_code == 403
+
+        # Query run with valid token -> 200
+        run_data = await client.get(
+            f"/api/runs/{run_id}", headers={"X-Run-Token": run_token}
+        )
         assert run_data.status_code == 200
+        snap = run_data.json().get("nodes_snapshot")
+        assert snap is not None
+        assert "brief" in snap
+        assert "planner" in snap
+
+        # Test cancel run endpoint
+        cancel_resp = await client.post(
+            f"/api/runs/{run_id}/cancel", headers={"X-Run-Token": run_token}
+        )
+        assert cancel_resp.status_code == 200
+        assert cancel_resp.json()["cancelled"] is True

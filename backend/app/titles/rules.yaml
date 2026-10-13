@@ -1,0 +1,73 @@
+# Platform Title Generation and Validation Rules
+# Sources cited:
+# - Amazon: Amazon Seller Central Product Title Requirements: https://sellercentral.amazon.in/gp/help/external/Y59Z5PU583QUS5L
+# - Flipkart: Flipkart Product Listing Guidelines: https://seller.flipkart.com/sell-online/hub/listing-guide/
+# - Myntra: Myntra Brand Style Guide (Apparel Product Titles)
+# - Meesho: Meesho Seller Learning Hub Title Best Practices: https://supplier.meesho.com/panel/v2/new/learning-hub
+
+platforms:
+  amazon:
+    formula: [brand, gender, fit, pattern, color, type, fabric, neck, sleeve, feature, pack]
+    recommended_min: 100
+    recommended_max: 150
+    hard_max: 200
+    case: title
+    max_word_repeat: 1
+    forbidden_patterns:
+      - '\b(best|#1|top rated|sale|discount|offer|free shipping|cheap|guaranteed)\b'
+      - '\b[A-Z]{4,}\b'
+    style_notes: "Title Case; brand first if given; keyword-rich but readable; no promotional text"
+
+  flipkart:
+    formula: [brand, pattern, gender, neck, fit, color, type]
+    recommended_min: 50
+    recommended_max: 100
+    hard_max: 150
+    case: title
+    max_word_repeat: 1
+    forbidden_patterns:
+      - '\b(best|#1|top rated|sale|discount|offer|free shipping|cheap|guaranteed)\b'
+      - '\b[A-Z]{4,}\b'
+    style_notes: "Structured, attribute-style, concise (e.g. Printed Men Round Neck Black T-Shirt)"
+
+  myntra:
+    formula: [brand, gender, fit, color, pattern, type, fabric]
+    recommended_min: 40
+    recommended_max: 70
+    hard_max: 100
+    case: title
+    max_word_repeat: 1
+    forbidden_patterns:
+      - '\b(best|#1|top rated|sale|discount|offer|free shipping|cheap|guaranteed)\b'
+      - '\b[A-Z]{4,}\b'
+    style_notes: "Short product name; most attributes live in separate fields"
+
+  meesho:
+    formula: [feature, gender, fit, color, pattern, type, fabric, pack]
+    recommended_min: 40
+    recommended_max: 90
+    hard_max: 120
+    case: title
+    max_word_repeat: 1
+    forbidden_patterns:
+      - '\b(best|#1|top rated|sale|discount|offer|free shipping|cheap|guaranteed)\b'
+      - '\b[A-Z]{4,}\b'
+    style_notes: "Short, catchy, value-oriented; Hinglish only if natural; Combo or Pack of N when relevant"
+
+global_forbidden_patterns:
+  - '(?i)\b(best|#1|top rated|sale|discount|offer|free shipping|cheap|guaranteed)\b'
+  - '\b[A-Z]{4,}\b'
+  - "[^\\w\\s\\-,&'()/%+]"
+
+# Order of part removal when title exceeds hard_max length:
+# Never remove 'type' or 'color'
+prune_priority_order:
+  - feature
+  - occasion
+  - pack
+  - size
+  - pattern
+  - neck
+  - sleeve
+  - fabric
+  - fit

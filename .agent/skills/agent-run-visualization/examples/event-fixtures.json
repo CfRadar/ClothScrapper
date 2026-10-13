@@ -1,0 +1,342 @@
+{
+  "happy_path_run": [
+    {
+      "type": "stage",
+      "stage": "planner",
+      "message": "AI Planner analyzing brief and target market...",
+      "ts": 1728045000.0
+    },
+    {
+      "type": "node",
+      "stage": "planner",
+      "message": "Brief submitted",
+      "data": { "node_id": "brief", "status": "success", "detail": "Oversized acid wash black tee (men)" },
+      "ts": 1728045000.1
+    },
+    {
+      "type": "node",
+      "stage": "planner",
+      "message": "Planner processing",
+      "data": { "node_id": "planner", "status": "running", "detail": "Querying model nvidia/nemotron-3.5-lightning:free" },
+      "ts": 1728045000.2
+    },
+    {
+      "type": "node",
+      "stage": "planner",
+      "message": "Planner completed",
+      "data": {
+        "node_id": "planner",
+        "status": "success",
+        "detail": "Generated 5 retail queries + 3 social queries",
+        "metrics": { "llm_calls": 1, "duration_ms": 2150 }
+      },
+      "ts": 1728045002.35
+    },
+    {
+      "type": "node",
+      "stage": "planner",
+      "message": "Target market inferred",
+      "data": { "node_id": "target_market", "status": "success", "detail": "Gen-Z / College streetwear (18-24)" },
+      "ts": 1728045002.4
+    },
+    {
+      "type": "node",
+      "stage": "planner",
+      "message": "Queries compiled",
+      "data": { "node_id": "search_queries", "status": "success", "detail": "15 total search strings generated" },
+      "ts": 1728045002.45
+    },
+    {
+      "type": "node",
+      "stage": "marketplace",
+      "message": "Marketplace gateway active",
+      "data": { "node_id": "marketplace", "status": "running", "detail": "Executing parallel platform scrapes" },
+      "ts": 1728045002.5
+    },
+    {
+      "type": "node",
+      "stage": "social",
+      "message": "Social listener active",
+      "data": { "node_id": "social", "status": "running", "detail": "Gathering organic shopper signals" },
+      "ts": 1728045002.55
+    },
+    {
+      "type": "node",
+      "stage": "marketplace",
+      "message": "Amazon query 1",
+      "data": {
+        "node_id": "amazon",
+        "status": "running",
+        "detail": "query 1/5 ('black oversized acid wash tee')",
+        "metrics": { "cache_hit": true }
+      },
+      "ts": 1728045002.8
+    },
+    {
+      "type": "node",
+      "stage": "marketplace",
+      "message": "Myntra query 1",
+      "data": {
+        "node_id": "myntra",
+        "status": "running",
+        "detail": "query 1/5 ('oversized acid wash graphic t-shirt')",
+        "metrics": { "cache_hit": false }
+      },
+      "ts": 1728045003.1
+    },
+    {
+      "type": "node",
+      "stage": "marketplace",
+      "message": "Flipkart query 1",
+      "data": {
+        "node_id": "flipkart",
+        "status": "running",
+        "detail": "query 1/5 ('black oversized graphic t-shirt men')",
+        "metrics": { "cache_hit": true }
+      },
+      "ts": 1728045003.3
+    },
+    {
+      "type": "node",
+      "stage": "social",
+      "message": "Reddit searching",
+      "data": {
+        "node_id": "reddit",
+        "status": "running",
+        "detail": "Searching r/IndianFashionAddicts & r/IndianStreetwear",
+        "metrics": { "queries_done": 2 }
+      },
+      "ts": 1728045003.5
+    },
+    {
+      "type": "node",
+      "stage": "social",
+      "message": "X disabled",
+      "data": { "node_id": "x", "status": "skipped", "detail": "Disabled via ENABLE_X=false" },
+      "ts": 1728045003.6
+    },
+    {
+      "type": "node",
+      "stage": "social",
+      "message": "Instagram disabled",
+      "data": { "node_id": "instagram", "status": "skipped", "detail": "Disabled via ENABLE_INSTAGRAM=false" },
+      "ts": 1728045003.65
+    },
+    {
+      "type": "node",
+      "stage": "marketplace",
+      "message": "Amazon scrape done",
+      "data": {
+        "node_id": "amazon",
+        "status": "success",
+        "detail": "30 products parsed, 12 autosuggest keywords",
+        "metrics": { "products": 30, "duration_ms": 3200 }
+      },
+      "ts": 1728045006.0
+    },
+    {
+      "type": "node",
+      "stage": "marketplace",
+      "message": "Myntra scrape done",
+      "data": {
+        "node_id": "myntra",
+        "status": "success",
+        "detail": "30 products parsed via state JSON",
+        "metrics": { "products": 30, "duration_ms": 2850 }
+      },
+      "ts": 1728045006.5
+    },
+    {
+      "type": "node",
+      "stage": "marketplace",
+      "message": "Flipkart scrape done",
+      "data": {
+        "node_id": "flipkart",
+        "status": "success",
+        "detail": "26 products parsed via DOM structure",
+        "metrics": { "products": 26, "duration_ms": 4100 }
+      },
+      "ts": 1728045007.4
+    },
+    {
+      "type": "node",
+      "stage": "marketplace",
+      "message": "Marketplace gateway complete",
+      "data": { "node_id": "marketplace", "status": "success", "detail": "All 3 platforms scraped" },
+      "ts": 1728045007.5
+    },
+    {
+      "type": "node",
+      "stage": "social",
+      "message": "Reddit completed",
+      "data": {
+        "node_id": "reddit",
+        "status": "success",
+        "detail": "14 wish phrases extracted",
+        "metrics": { "signals": 14, "duration_ms": 4800 }
+      },
+      "ts": 1728045008.3
+    },
+    {
+      "type": "node",
+      "stage": "social",
+      "message": "Social gateway complete",
+      "data": { "node_id": "social", "status": "success", "detail": "14 organic phrases normalized" },
+      "ts": 1728045008.4
+    },
+    {
+      "type": "node",
+      "stage": "analyst",
+      "message": "Analyst synthesizing",
+      "data": {
+        "node_id": "analyst",
+        "status": "running",
+        "detail": "Deterministic scoring complete, synthesizing top keywords",
+        "metrics": { "top_candidates": 60 }
+      },
+      "ts": 1728045008.6
+    },
+    {
+      "type": "node",
+      "stage": "analyst",
+      "message": "Analyst synthesis complete",
+      "data": {
+        "node_id": "analyst",
+        "status": "success",
+        "detail": "20 keywords generated per platform + factors",
+        "metrics": { "llm_calls": 1, "duration_ms": 2900 }
+      },
+      "ts": 1728045011.5
+    },
+    {
+      "type": "node",
+      "stage": "system",
+      "message": "Results ready",
+      "data": { "node_id": "output", "status": "success", "detail": "60 total keywords, ready in drawer" },
+      "ts": 1728045011.6
+    },
+    {
+      "type": "done",
+      "stage": "system",
+      "message": "Pipeline completed in 11.6s",
+      "ts": 1728045011.7
+    }
+  ],
+
+  "blocked_platform_run": [
+    {
+      "type": "stage",
+      "stage": "planner",
+      "message": "AI Planner starting...",
+      "ts": 1728046000.0
+    },
+    {
+      "type": "node",
+      "stage": "planner",
+      "message": "Brief ok",
+      "data": { "node_id": "brief", "status": "success", "detail": "Graphic streetwear tee" },
+      "ts": 1728046000.1
+    },
+    {
+      "type": "node",
+      "stage": "planner",
+      "message": "Planner finished",
+      "data": { "node_id": "planner", "status": "success", "detail": "Queries ready", "metrics": { "llm_calls": 1 } },
+      "ts": 1728046002.1
+    },
+    {
+      "type": "node",
+      "stage": "marketplace",
+      "message": "Marketplace scraping starting",
+      "data": { "node_id": "marketplace", "status": "running" },
+      "ts": 1728046002.2
+    },
+    {
+      "type": "node",
+      "stage": "marketplace",
+      "message": "Amazon scrape",
+      "data": { "node_id": "amazon", "status": "success", "detail": "30 products scraped", "metrics": { "products": 30 } },
+      "ts": 1728046005.1
+    },
+    {
+      "type": "node",
+      "stage": "marketplace",
+      "message": "Flipkart robot check",
+      "data": {
+        "node_id": "flipkart",
+        "status": "warning",
+        "detail": "Bot challenge detected, using cross-platform candidates",
+        "metrics": { "blocked": true }
+      },
+      "ts": 1728046006.0
+    },
+    {
+      "type": "warning",
+      "stage": "marketplace",
+      "message": "Flipkart blocked further access. Continuing with available signals.",
+      "ts": 1728046006.1
+    },
+    {
+      "type": "node",
+      "stage": "social",
+      "message": "Reddit rate limited",
+      "data": { "node_id": "reddit", "status": "warning", "detail": "HTTP 429 rate limit, 0 signals captured" },
+      "ts": 1728046007.2
+    },
+    {
+      "type": "node",
+      "stage": "analyst",
+      "message": "Analyst synthesizing with fallback",
+      "data": { "node_id": "analyst", "status": "success", "detail": "Synthesized results using cross-platform taxonomy" },
+      "ts": 1728046009.5
+    },
+    {
+      "type": "node",
+      "stage": "system",
+      "message": "Partial results ready",
+      "data": { "node_id": "output", "status": "warning", "detail": "Results compiled with 1 platform warning" },
+      "ts": 1728046009.6
+    },
+    {
+      "type": "done",
+      "stage": "system",
+      "message": "Pipeline completed with warnings",
+      "ts": 1728046009.7
+    }
+  ],
+
+  "cancelled_run": [
+    {
+      "type": "stage",
+      "stage": "planner",
+      "message": "AI Planner running...",
+      "ts": 1728047000.0
+    },
+    {
+      "type": "node",
+      "stage": "planner",
+      "message": "Planner active",
+      "data": { "node_id": "planner", "status": "running", "detail": "Generating queries" },
+      "ts": 1728047000.5
+    },
+    {
+      "type": "warning",
+      "stage": "system",
+      "message": "Client disconnected or run cancelled by seller.",
+      "ts": 1728047002.0
+    },
+    {
+      "type": "node",
+      "stage": "planner",
+      "message": "Planner cancelled",
+      "data": { "node_id": "planner", "status": "error", "detail": "Task cancelled by client abort" },
+      "ts": 1728047002.1
+    },
+    {
+      "type": "error",
+      "stage": "system",
+      "message": "Pipeline aborted.",
+      "ts": 1728047002.2
+    }
+  ]
+}
